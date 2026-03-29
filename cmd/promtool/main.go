@@ -48,7 +48,6 @@ import (
 	"github.com/prometheus/prometheus/config"
 	"github.com/prometheus/prometheus/discovery"
 	"github.com/prometheus/prometheus/discovery/file"
-	"github.com/prometheus/prometheus/discovery/kubernetes"
 	"github.com/prometheus/prometheus/discovery/targetgroup"
 	"github.com/prometheus/prometheus/model/labels"
 	"github.com/prometheus/prometheus/model/rulefmt"
@@ -707,10 +706,6 @@ func checkConfig(agentMode bool, filename string, checkSyntaxOnly bool) ([]strin
 
 		for _, c := range scfg.ServiceDiscoveryConfigs {
 			switch c := c.(type) {
-			case *kubernetes.SDConfig:
-				if err := checkTLSConfig(c.HTTPClientConfig.TLSConfig, checkSyntaxOnly); err != nil {
-					return nil, nil, err
-				}
 			case *file.SDConfig:
 				if checkSyntaxOnly {
 					break

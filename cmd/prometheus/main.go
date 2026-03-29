@@ -55,8 +55,6 @@ import (
 	toolkit_web "github.com/prometheus/exporter-toolkit/web"
 	"go.uber.org/atomic"
 	"go.uber.org/automaxprocs/maxprocs"
-	"k8s.io/klog"
-	klogv2 "k8s.io/klog/v2"
 
 	"github.com/prometheus/prometheus/config"
 	"github.com/prometheus/prometheus/discovery"
@@ -105,21 +103,7 @@ type klogv1Writer struct{}
 // https://github.com/kubernetes/klog/blob/main/examples/coexist_klog_v1_and_v2/coexist_klog_v1_and_v2.go
 func (klogv1Writer) Write(p []byte) (n int, err error) {
 	if len(p) < klogv1DefaultPrefixLength {
-		klogv2.InfoDepth(klogv1OutputCallDepth, string(p))
 		return len(p), nil
-	}
-
-	switch p[0] {
-	case 'I':
-		klogv2.InfoDepth(klogv1OutputCallDepth, string(p[klogv1DefaultPrefixLength:]))
-	case 'W':
-		klogv2.WarningDepth(klogv1OutputCallDepth, string(p[klogv1DefaultPrefixLength:]))
-	case 'E':
-		klogv2.ErrorDepth(klogv1OutputCallDepth, string(p[klogv1DefaultPrefixLength:]))
-	case 'F':
-		klogv2.FatalDepth(klogv1OutputCallDepth, string(p[klogv1DefaultPrefixLength:]))
-	default:
-		klogv2.InfoDepth(klogv1OutputCallDepth, string(p[klogv1DefaultPrefixLength:]))
 	}
 
 	return len(p), nil
@@ -809,9 +793,6 @@ func main() {
 	noStepSubqueryInterval := &safePromQLNoStepSubqueryInterval{}
 	noStepSubqueryInterval.Set(config.DefaultGlobalConfig.EvaluationInterval)
 
-	klogv2.SetSlogLogger(logger.With("component", "k8s_client_runtime"))
-	klog.SetOutputBySeverity("INFO", klogv1Writer{})
-
 	modeAppName := "Prometheus Server"
 	mode := "server"
 	if agentMode {
@@ -855,17 +836,6 @@ func main() {
 		discoveryManagerScrape  *discovery.Manager
 		discoveryManagerNotify  *discovery.Manager
 	)
-
-	// Kubernetes client metrics are used by Kubernetes SD.
-	// They are registered here in the main function, because SD mechanisms
-	// can only register metrics specific to a SD instance.
-	// Kubernetes client metrics are the same for the whole process -
-	// they are not specific to an SD instance.
-	err = discovery.RegisterK8sClientMetricsWithPrometheus(prometheus.DefaultRegisterer)
-	if err != nil {
-		logger.Error("failed to register Kubernetes client metrics", "err", err)
-		os.Exit(1)
-	}
 
 	sdMetrics, err := discovery.CreateAndRegisterSDMetrics(prometheus.DefaultRegisterer)
 	if err != nil {

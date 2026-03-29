@@ -31,6 +31,7 @@ jobs:
           git config --global user.name "actions"
 
           git commit -a -m "go mod tidy" || true
+          git push || true
 
       - name: Create or Update Tag
         run: |

@@ -1,0 +1,27 @@
+name: Build and tag
+
+on:
+  push:
+    branches:
+      - release-*
+  workflow_dispatch:
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-go@v6
+
+      - name: Build
+        run: |
+          go build github.com/prometheus/prometheus/cmd/prometheus
+
+      - name: Create or Update Tag
+        run: |
+          branch_name=$(git rev-parse --abbrev-ref HEAD)
+          tag_name=${branch_name:8}
+          git tag -f "$tag_name"
+          git push origin "$tag_name"

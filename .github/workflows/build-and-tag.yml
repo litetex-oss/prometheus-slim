@@ -22,6 +22,15 @@ jobs:
       - name: Build
         run: |
           go build github.com/prometheus/prometheus/cmd/prometheus
+      
+      - name: Cleanup
+        run: |
+          go mod tidy
+
+          git config --global user.email "actions@github.com"
+          git config --global user.name "actions"
+
+          git commit -a -m "go mod tidy" || true
 
       - name: Create or Update Tag
         run: |

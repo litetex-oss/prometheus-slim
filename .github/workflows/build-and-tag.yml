@@ -28,4 +28,4 @@ jobs:
           branch_name=$(git rev-parse --abbrev-ref HEAD)
           tag_name=${branch_name:8}
           git tag -f "$tag_name"
-          git push origin "$tag_name"
+          git push -f origin "$tag_name"

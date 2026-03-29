@@ -29,3 +29,12 @@ jobs:
           tag_name=${branch_name:8}
           git tag -f "$tag_name"
           git push -f origin "$tag_name"
+
+          # v1.2.3
+          compat_tag_name=${tag_name:1}
+          # 1.2.3
+          IFS='.' read -ra COMPAT_TAG_PARTS <<< "$compat_tag_name"
+          compat_tag_name="v0.${COMPAT_TAG_PARTS[0]}$(printf %02d ${COMPAT_TAG_PARTS[1]}).${COMPAT_TAG_PARTS[2]}"
+          # v0.102.3
+          git tag -f "$compat_tag_name"
+          git push -f origin "$compat_tag_name"

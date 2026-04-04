@@ -1,0 +1,50 @@
+name: Build and tag
+
+on:
+  push:
+    branches:
+      - release-*
+  workflow_dispatch:
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: 'go.mod'
+
+      - name: Build
+        run: |
+          go build github.com/prometheus/prometheus/cmd/prometheus
+      
+      - name: Cleanup
+        run: |
+          go mod tidy
+
+          git config --global user.email "actions@github.com"
+          git config --global user.name "actions"
+
+          git commit -a -m "go mod tidy" || true
+          git push || true
+
+      - name: Create or Update Tag
+        run: |
+          branch_name=$(git rev-parse --abbrev-ref HEAD)
+          tag_name=${branch_name:8}
+          git tag -f "$tag_name"
+          git push -f origin "$tag_name"
+
+          # v1.2.3
+          compat_tag_name=${tag_name:1}
+          # 1.2.3
+          IFS='.' read -ra COMPAT_TAG_PARTS <<< "$compat_tag_name"
+          compat_tag_name="v0.${COMPAT_TAG_PARTS[0]}$(printf %02d ${COMPAT_TAG_PARTS[1]}).${COMPAT_TAG_PARTS[2]}"
+          # v0.102.3
+          git tag -f "$compat_tag_name"
+          git push -f origin "$compat_tag_name"

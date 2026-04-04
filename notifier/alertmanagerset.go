@@ -22,7 +22,6 @@ import (
 	"sync"
 
 	config_util "github.com/prometheus/common/config"
-	"github.com/prometheus/sigv4"
 	"go.yaml.in/yaml/v2"
 
 	"github.com/prometheus/prometheus/config"
@@ -53,13 +52,6 @@ func newAlertmanagerSet(cfg *config.AlertmanagerConfig, opts *Options, logger *s
 		return nil, err
 	}
 	t := client.Transport
-
-	if cfg.SigV4Config != nil {
-		t, err = sigv4.NewSigV4RoundTripper(cfg.SigV4Config, client.Transport)
-		if err != nil {
-			return nil, err
-		}
-	}
 
 	client.Transport = t
 

@@ -33,14 +33,11 @@ import (
 	"github.com/prometheus/common/config"
 	"github.com/prometheus/common/model"
 	"github.com/prometheus/otlptranslator"
-	"github.com/prometheus/sigv4"
 	"go.yaml.in/yaml/v2"
 
 	"github.com/prometheus/prometheus/discovery"
 	"github.com/prometheus/prometheus/model/labels"
 	"github.com/prometheus/prometheus/model/relabel"
-	"github.com/prometheus/prometheus/storage/remote/azuread"
-	"github.com/prometheus/prometheus/storage/remote/googleiam"
 )
 
 var (
@@ -1341,7 +1338,6 @@ type AlertmanagerConfig struct {
 
 	ServiceDiscoveryConfigs discovery.Configs       `yaml:"-"`
 	HTTPClientConfig        config.HTTPClientConfig `yaml:",inline"`
-	SigV4Config             *sigv4.SigV4Config      `yaml:"sigv4,omitempty"`
 
 	// The URL scheme to use when talking to Alertmanagers.
 	Scheme string `yaml:"scheme,omitempty"`
@@ -1377,13 +1373,6 @@ func (c *AlertmanagerConfig) UnmarshalYAML(unmarshal func(any) error) error {
 	// Thus we just do its validation here.
 	if err := c.HTTPClientConfig.Validate(); err != nil {
 		return err
-	}
-
-	httpClientConfigAuthEnabled := c.HTTPClientConfig.BasicAuth != nil ||
-		c.HTTPClientConfig.Authorization != nil || c.HTTPClientConfig.OAuth2 != nil
-
-	if httpClientConfigAuthEnabled && c.SigV4Config != nil {
-		return errors.New("at most one of basic_auth, authorization, oauth2, & sigv4 must be configured")
 	}
 
 	// Check for users putting URLs in target groups.
@@ -1472,9 +1461,6 @@ type RemoteWriteConfig struct {
 	HTTPClientConfig config.HTTPClientConfig `yaml:",inline"`
 	QueueConfig      QueueConfig             `yaml:"queue_config,omitempty"`
 	MetadataConfig   MetadataConfig          `yaml:"metadata_config,omitempty"`
-	SigV4Config      *sigv4.SigV4Config      `yaml:"sigv4,omitempty"`
-	AzureADConfig    *azuread.AzureADConfig  `yaml:"azuread,omitempty"`
-	GoogleIAMConfig  *googleiam.Config       `yaml:"google_iam,omitempty"`
 }
 
 // SetDirectory joins any relative file paths with dir.
@@ -1536,15 +1522,6 @@ func validateAuthConfigs(c *RemoteWriteConfig) error {
 	}
 	if c.HTTPClientConfig.OAuth2 != nil {
 		authConfigured = append(authConfigured, "oauth2")
-	}
-	if c.SigV4Config != nil {
-		authConfigured = append(authConfigured, "sigv4")
-	}
-	if c.AzureADConfig != nil {
-		authConfigured = append(authConfigured, "azuread")
-	}
-	if c.GoogleIAMConfig != nil {
-		authConfigured = append(authConfigured, "google_iam")
 	}
 	if len(authConfigured) > 1 {
 		return fmt.Errorf("at most one of basic_auth, authorization, oauth2, sigv4, azuread or google_iam must be configured. Currently configured: %v", authConfigured)

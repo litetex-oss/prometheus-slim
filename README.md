@@ -14,6 +14,7 @@ After removing this code the binary was 3-4x smaller.
   * Sigv4 aka AWS Signature Version 4
   * AzureAD
   * GoogleIAM
+* Kubernetes specific configuration
 
 ## How?
 The updating logic can be found in the [sidecar repo](https://github.com/litetex-oss/prometheus-slim-manager).

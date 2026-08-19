@@ -33,7 +33,6 @@ import (
 	config_util "github.com/prometheus/common/config"
 	"github.com/prometheus/common/model"
 	"github.com/prometheus/common/version"
-	"github.com/prometheus/sigv4"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/httptrace/otelhttptrace"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel"
@@ -41,8 +40,6 @@ import (
 
 	"github.com/prometheus/prometheus/prompb"
 	"github.com/prometheus/prometheus/storage"
-	"github.com/prometheus/prometheus/storage/remote/azuread"
-	"github.com/prometheus/prometheus/storage/remote/googleiam"
 )
 
 const (
@@ -129,9 +126,6 @@ type ClientConfig struct {
 	URL                   *config_util.URL
 	Timeout               model.Duration
 	HTTPClientConfig      config_util.HTTPClientConfig
-	SigV4Config           *sigv4.SigV4Config
-	AzureADConfig         *azuread.AzureADConfig
-	GoogleIAMConfig       *googleiam.Config
 	Headers               map[string]string
 	RetryOnRateLimit      bool
 	WriteProtoMsg         remoteapi.WriteMessageType
@@ -193,27 +187,6 @@ func NewWriteClient(name string, conf *ClientConfig) (WriteClient, error) {
 
 	if len(conf.Headers) > 0 {
 		t = newInjectHeadersRoundTripper(conf.Headers, t)
-	}
-
-	if conf.SigV4Config != nil {
-		t, err = sigv4.NewSigV4RoundTripper(conf.SigV4Config, t)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	if conf.AzureADConfig != nil {
-		t, err = azuread.NewAzureADRoundTripper(conf.AzureADConfig, t)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	if conf.GoogleIAMConfig != nil {
-		t, err = googleiam.NewRoundTripper(conf.GoogleIAMConfig, t)
-		if err != nil {
-			return nil, err
-		}
 	}
 
 	writeProtoMsg := remoteapi.WriteV1MessageType
